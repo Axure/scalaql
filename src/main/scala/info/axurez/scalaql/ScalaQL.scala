@@ -10,34 +10,26 @@ class ScalaQL {
   
   val queries: mutable.Queue[BaseLine] = mutable.Queue[BaseLine]()
 
-  case class SelectQuery(columnName: Symbol) extends BaseLine
+  case class ConditionedSelectQuery(columnName: Symbol, tableName: Symbol, condition: Symbol) extends BaseLine
+  case class SelectQuery(columnName: Symbol, tableName: Symbol) extends BaseLine
   case class UpdateQuery(to: Any) extends BaseLine
   case class InsertQuery(to: Any) extends BaseLine
   case class DeleteQuery(to: Any) extends BaseLine
-  
-  abstract sealed class KEYWORD
 
-  case class QueryBuilder2() {
-    
-    def apply(columnName: Symbol): SelectQuery = {
-        val newSelect = SelectQuery(columnName)
-        queries.enqueue(newSelect)
-        newSelect
-      }
-  }
+  abstract sealed class KEYWORD
 
   case class QueryBuilder(symbol: Symbol) {
     case object SELECT extends KEYWORD {
-      def apply(columnName: Symbol): SelectQuery = {
-        val newSelect = SelectQuery(columnName)
-        queries.enqueue(newSelect)
+      def apply(columnName: Symbol): WithSelect = {
+        val newSelect = WithSelect(columnName)
+//        queries.enqueue(newSelect)
         newSelect
       }
     }
 
     case object UPDATE extends KEYWORD {
       def apply(): UpdateQuery = {
-        val newSelect = new UpdateQuery()
+        val newSelect = UpdateQuery()
         queries.enqueue(newSelect)
         newSelect
       }
@@ -45,7 +37,7 @@ class ScalaQL {
 
     case object DELETE extends KEYWORD {
       def apply(): DeleteQuery = {
-        val newSelect = new DeleteQuery()
+        val newSelect = DeleteQuery()
         queries.enqueue(newSelect)
         newSelect
       }
@@ -60,14 +52,44 @@ class ScalaQL {
     }
   }
 
-  def GO = execute()
+  case class WithSelect(columnName: Symbol) {
+    object FROM {
+      def apply(tableName: Symbol): WithFrom = {
+        WithFrom(columnName, tableName)
+      }
+    }
+  }
+
+  case class WithFrom(columnName: Symbol, tableName: Symbol) {
+    object WHERE {
+      def apply(condition: Symbol): WithWhere = {
+        WithWhere(columnName, tableName, condition)
+      }
+    }
+
+    def END : Unit = {
+      val newSelect = SelectQuery(columnName, tableName)
+      queries.enqueue(newSelect)
+    }
+  }
+
+  case class WithWhere(columnName: Symbol, tableName: Symbol, condition: Symbol) {
+    def END : Unit = {
+      val newSelect = ConditionedSelectQuery(columnName: Symbol, tableName: Symbol, condition: Symbol)
+      queries.enqueue(newSelect)
+    }
+  }
+
+  def GO() = execute()
 
   private def execute() {
     while (queries.nonEmpty) {
       val query = queries.dequeue
       query match {
-        case SelectQuery(columnName) =>
-          println(columnName)
+        case ConditionedSelectQuery(columnName, tableName, condition) =>
+          println(columnName, tableName, condition)
+        case SelectQuery(columnName, tableName) =>
+          println(columnName, tableName)
         case _ =>
       }
     }
