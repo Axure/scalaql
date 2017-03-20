@@ -8,7 +8,7 @@ class ScalaQL {
   
   abstract sealed class BaseLine
   
-  val queries = mutable.Queue[BaseLine]()
+  val queries: mutable.Queue[BaseLine] = mutable.Queue[BaseLine]()
 
   case class SelectQuery(columnName: Symbol) extends BaseLine
   case class UpdateQuery(to: Any) extends BaseLine
@@ -22,7 +22,7 @@ class ScalaQL {
     def apply(columnName: Symbol): SelectQuery = {
         val newSelect = SelectQuery(columnName)
         queries.enqueue(newSelect)
-        return newSelect
+        newSelect
       }
   }
 
@@ -31,7 +31,7 @@ class ScalaQL {
       def apply(columnName: Symbol): SelectQuery = {
         val newSelect = SelectQuery(columnName)
         queries.enqueue(newSelect)
-        return newSelect
+        newSelect
       }
     }
 
@@ -39,7 +39,7 @@ class ScalaQL {
       def apply(): UpdateQuery = {
         val newSelect = new UpdateQuery()
         queries.enqueue(newSelect)
-        return newSelect
+        newSelect
       }
     }
 
@@ -47,15 +47,15 @@ class ScalaQL {
       def apply(): DeleteQuery = {
         val newSelect = new DeleteQuery()
         queries.enqueue(newSelect)
-        return newSelect
+        newSelect
       }
     }
 
     case object INSERT extends KEYWORD {
       def apply(): InsertQuery = {
-        val newSelect = new InsertQuery()
+        val newSelect = InsertQuery()
         queries.enqueue(newSelect)
-        return newSelect
+        newSelect
       }
     }
   }
@@ -63,18 +63,17 @@ class ScalaQL {
   def GO = execute()
 
   private def execute() {
-    while (!queries.isEmpty) {
+    while (queries.nonEmpty) {
       val query = queries.dequeue
-      (query) match {
-        case SelectQuery(columnName) => {
+      query match {
+        case SelectQuery(columnName) =>
           println(columnName)
-        }
-        case _ => {}
+        case _ =>
       }
     }
   }
 
-  implicit def symbol2QueryBuilder(symbol: Symbol) = symbol match {
+  implicit def symbol2QueryBuilder(symbol: Symbol): QueryBuilder = symbol match {
     case '> => QueryBuilder(symbol)
     case _ => throw new Exception("Invalid")
   }
