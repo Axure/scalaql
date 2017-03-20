@@ -7,8 +7,14 @@ import info.axurez.scalaql.ScalaQL
   */
 object HelloWorld extends ScalaQL {
   def main(args: Array[String]): Unit = {
-    SELECT
-    SELECT
-    SELECT
+    '> SELECT 'name
+    'ha SELECT 'name
+    //SELECT
+    //SELECT
+    //UPDATE
+    GO
+
+
+
   }
 }
